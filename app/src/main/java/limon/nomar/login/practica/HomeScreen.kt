@@ -6,10 +6,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.remote.creation.first
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -21,8 +24,8 @@ fun HomeScreen(
     var search by remember { mutableStateOf("") }
     var lista by remember { mutableStateOf(ProductoLista.productos) }
 
-    val carrito = CarritoManager(context)
-
+    val dataStore = DataStoreManager(context)
+    val scope = rememberCoroutineScope()
 
     val naranjaOW = Color(0xFFFA9C1D)
 
@@ -64,12 +67,21 @@ fun HomeScreen(
 
         LazyColumn {
             items(lista) { producto ->
+
                 ProductoItem(
                     producto = producto,
 
-
                     onAgregar = {
-                        carrito.agregarProducto(producto.id)
+
+                        scope.launch {
+
+                            val carritoActual = dataStore.carritoFlow.first()
+
+                            val nuevo = carritoActual.toMutableList()
+                            nuevo.add(producto.id)
+
+                            dataStore.guardarCarrito(nuevo)
+                        }
 
                         Toast.makeText(
                             context,

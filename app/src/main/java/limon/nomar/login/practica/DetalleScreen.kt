@@ -10,13 +10,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.painterResource
 import android.content.Context
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 
 @Composable
 fun DetalleScreen(id: Int, context: Context) {
 
     val producto = ProductoLista.obtenerPorId(id)
-    val carrito = CarritoManager(context)
+    val dataStore = DataStoreManager(context)
 
     producto?.let {
 
@@ -33,7 +35,20 @@ fun DetalleScreen(id: Int, context: Context) {
             Text(it.descripcion)
 
             Button(onClick = {
-                carrito.agregarProducto(it.id)
+
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+
+                    dataStore.carritoFlow.collect { carritoActual ->
+
+                        val nuevo = carritoActual.toMutableList()
+                        nuevo.add(it.id)
+
+                        dataStore.guardarCarrito(nuevo)
+
+                        this.cancel()
+                    }
+                }
+
             }) {
                 Text("Agregar al carrito")
             }
